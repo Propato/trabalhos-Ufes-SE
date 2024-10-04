@@ -1,0 +1,250 @@
+     1                                  ;-----------------------------------------------------------------------------
+     2                                  ;    funções init_platform e mover_plataforma
+     3                                  ; cor definida na variavel cor					  
+     4                                  global write_init, write_game_win, write_game_over, arase
+     5                                  extern cor, mens, mens_game_win, mens_game_over, cursor, caracter, line
+     6                                  
+     7                                  write_init:
+     8 00000000 9C                          PUSHF
+     9 00000001 50                          PUSH 	AX
+    10 00000002 53                          PUSH 	BX
+    11 00000003 51                          PUSH	CX
+    12 00000004 52                          PUSH	DX
+    13                                  
+    14 00000005 C606[0000]07            	MOV		byte[cor], 7 		; branco    
+    15 0000000A E83C01                      CALL    empty_block
+    16                                  
+    17 0000000D B81400                  	MOV		AX, 20
+    18 00000010 50                      	PUSH	AX
+    19 00000011 B81F00                      MOV		AX, 31
+    20 00000014 50                      	PUSH	AX
+    21 00000015 B81F00                  	MOV		AX, 31
+    22 00000018 50                      	PUSH	AX
+    23                                  
+    24                                  	; escreve mensagem de inicio
+    25 00000019 B90C00                  	MOV     CX, 12            	; namero de caracteres
+    26 0000001C BB0000                  	MOV     BX, 0
+    27 0000001F B60B                    	MOV     DH, 11            	; linha 0-29
+    28 00000021 B223                    	MOV     DL, 35           	; coluna 0-79
+    29 00000023 C606[0000]0C            	MOV		byte[cor], 12 		; rosa
+    30                                  lpMens_Inicio:
+    31 00000028 E8(0000)                	CALL    cursor
+    32 0000002B 8A87[0000]              	MOV     AL, [BX+mens]
+    33 0000002F E8(0000)                	CALL    caracter
+    34 00000032 43                      	INC     BX            		; proximo caracter
+    35 00000033 FEC2                    	INC     DL            		; avanca a coluna
+    36 00000035 E2F1                    	LOOP    lpMens_Inicio	
+    37                                  
+    38 00000037 80C602                  	ADD 	DH, 2
+    39 0000003A B218                    	MOV		DL, 24
+    40 0000003C 59                      	POP		CX
+    41 0000003D C606[0000]07            	MOV		byte[cor], 7 		; branco
+    42                                  
+    43 00000042 80FE0F                  	CMP		DH, 15
+    44 00000045 76E1                    	JBE		lpMens_Inicio
+    45                                  
+    46 00000047 B21E                    	MOV     DL, 30           	; coluna 0-79
+    47 00000049 C606[0000]0C            	MOV		byte[cor], 12 		; rosa
+    48                                  lpMens_Enter:
+    49 0000004E E8(0000)                	CALL    cursor
+    50 00000051 8A87[0000]              	MOV     AL, [BX+mens]
+    51 00000055 E8(0000)                	CALL    caracter
+    52 00000058 43                      	INC     BX            		; proximo caracter
+    53 00000059 FEC2                    	INC     DL            		; avanca a coluna
+    54 0000005B E2F1                    	LOOP    lpMens_Enter
+    55                                      
+    56 0000005D 5A                          POP     DX
+    57 0000005E 59                          POP     CX
+    58 0000005F 5B                          POP     BX
+    59 00000060 58                          POP     AX
+    60 00000061 9D                          POPF
+    61                                  
+    62 00000062 C3                          RET
+    63                                  
+    64                                  ;Apaga mensagem de início
+    65                                  arase:
+    66 00000063 9C                          PUSHF
+    67 00000064 50                          PUSH 	AX
+    68 00000065 53                          PUSH 	BX
+    69 00000066 51                          PUSH	CX
+    70 00000067 52                          PUSH	DX
+    71                                  
+    72 00000068 C606[0000]00                MOV		byte[cor], 0 		; preto    
+    73 0000006D E8D900                      CALL    empty_block
+    74                                  
+    75 00000070 B81400                  	MOV		AX, 20
+    76 00000073 50                      	PUSH	AX
+    77 00000074 B81F00                      MOV		AX, 31
+    78 00000077 50                      	PUSH	AX
+    79 00000078 B81F00                  	MOV		AX, 31
+    80 0000007B 50                      	PUSH	AX
+    81                                  
+    82 0000007C C606[0000]00            	MOV		byte[cor], 0 		; preto
+    83 00000081 B90C00                  	MOV     CX, 12            	; namero de caracteres
+    84 00000084 BB0000                  	MOV     BX, 0
+    85 00000087 B60B                    	MOV     DH, 11            	; linha 0-29
+    86 00000089 B223                    	MOV     DL, 35           	; coluna 0-79
+    87                                  lpMens_Apaga:
+    88 0000008B E8(0000)                	CALL    cursor
+    89 0000008E 8A87[0000]              	MOV     AL, [BX+mens]
+    90 00000092 E8(0000)                	CALL    caracter
+    91 00000095 43                      	INC     BX            		; proximo caracter
+    92 00000096 FEC2                    	INC     DL            		; avanca a coluna
+    93 00000098 E2F1                    	LOOP    lpMens_Apaga	
+    94                                  
+    95 0000009A 80C602                  	ADD 	DH, 2
+    96 0000009D B218                    	MOV		DL, 24
+    97 0000009F 59                      	POP		CX
+    98                                  
+    99 000000A0 80FE0F                  	CMP		DH, 15
+   100 000000A3 76E6                    	JBE		lpMens_Apaga
+   101                                  
+   102 000000A5 B21E                    	MOV     DL, 30           	; coluna 0-79
+   103                                  lpApaga_Enter:
+   104 000000A7 E8(0000)                	CALL    cursor
+   105 000000AA 8A87[0000]              	MOV     AL, [BX+mens]
+   106 000000AE E8(0000)                	CALL    caracter
+   107 000000B1 43                      	INC     BX            		; proximo caracter
+   108 000000B2 FEC2                    	INC     DL            		; avanca a coluna
+   109 000000B4 E298                    	LOOP    lpMens_Enter
+   110                                      
+   111 000000B6 5A                          POP     DX
+   112 000000B7 59                          POP     CX
+   113 000000B8 5B                          POP     BX
+   114 000000B9 58                          POP     AX
+   115 000000BA 9D                          POPF
+   116                                  
+   117 000000BB C3                          RET
+   118                                  
+   119                                  write_game_win:
+   120 000000BC 9C                          PUSHF
+   121 000000BD 50                          PUSH 	AX
+   122 000000BE 53                          PUSH 	BX
+   123 000000BF 51                          PUSH	CX
+   124 000000C0 52                          PUSH	DX
+   125                                  
+   126 000000C1 C606[0000]07                MOV		byte[cor], 7 		; branco    
+   127 000000C6 E88000                      CALL    empty_block
+   128                                      
+   129                                  	; escreve mensagem de Game Over
+   130 000000C9 B90900                  	MOV     CX, 9            	; namero de caracteres
+   131 000000CC BB0000                  	MOV     BX, 0
+   132 000000CF B60B                    	MOV     DH, 11            	; linha 0-29
+   133 000000D1 B223                    	MOV     DL, 35           	; coluna 0-79
+   134 000000D3 C606[0000]0C            	MOV		byte[cor], 12 		; rosa
+   135                                  lpMens_Vitoria_de_Jogo:
+   136 000000D8 E8(0000)                	CALL    cursor
+   137 000000DB 8A87[0000]              	MOV     AL, [BX+mens_game_win]
+   138 000000DF E8(0000)                	CALL    caracter
+   139 000000E2 43                      	INC     BX            		; proximo caracter
+   140 000000E3 FEC2                    	INC     DL            		; avanca a coluna
+   141 000000E5 E2F1                    	LOOP    lpMens_Vitoria_de_Jogo	
+   142                                  
+   143 000000E7 80C602                  	ADD 	DH, 2
+   144 000000EA B220                    	MOV		DL, 32
+   145 000000EC B91200                  	MOV		CX, 18
+   146 000000EF C606[0000]07            	MOV		byte[cor], 7 		; branco
+   147                                  
+   148 000000F4 80FE0F                  	CMP		DH, 15
+   149 000000F7 76DF                    	JBE		lpMens_Vitoria_de_Jogo
+   150                                  
+   151 000000F9 5A                          POP     DX
+   152 000000FA 59                          POP     CX
+   153 000000FB 5B                          POP     BX
+   154 000000FC 58                          POP     AX
+   155 000000FD 9D                          POPF
+   156                                  
+   157 000000FE C3                          RET
+   158                                  
+   159                                  write_game_over:
+   160 000000FF 9C                          PUSHF
+   161 00000100 50                          PUSH 	AX
+   162 00000101 53                          PUSH 	BX
+   163 00000102 51                          PUSH	CX
+   164 00000103 52                          PUSH	DX
+   165                                  
+   166 00000104 C606[0000]07                MOV		byte[cor], 7 		; branco    
+   167 00000109 E83D00                      CALL    empty_block
+   168                                      
+   169 0000010C B81200                      MOV		AX, 18
+   170 0000010F 50                      	PUSH	AX
+   171 00000110 B81000                  	MOV		AX, 16
+   172 00000113 50                      	PUSH	AX
+   173                                  
+   174                                  	; escreve mensagem de Game Over
+   175 00000114 B90B00                  	MOV     CX, 11            	; namero de caracteres
+   176 00000117 BB0000                  	MOV     BX, 0
+   177 0000011A B60B                    	MOV     DH, 11            	; linha 0-29
+   178 0000011C B223                    	MOV     DL, 35           	; coluna 0-79
+   179 0000011E C606[0000]0C            	MOV		byte[cor], 12 		; rosa
+   180                                  lpMens_Fim_de_Jogo:
+   181 00000123 E8(0000)                	CALL    cursor
+   182 00000126 8A87[0000]              	MOV     AL, [BX+mens_game_over]
+   183 0000012A E8(0000)                	CALL    caracter
+   184 0000012D 43                      	INC     BX            		; proximo caracter
+   185 0000012E FEC2                    	INC     DL            		; avança a coluna
+   186 00000130 E2F1                    	LOOP    lpMens_Fim_de_Jogo	
+   187                                  
+   188 00000132 80C602                  	ADD 	DH, 2
+   189 00000135 B220                    	MOV		DL, 32
+   190 00000137 59                      	POP		CX
+   191 00000138 C606[0000]07            	MOV		byte[cor], 7 		; branco
+   192                                  
+   193 0000013D 80FE0F                  	CMP		DH, 15
+   194 00000140 76E1                    	JBE		lpMens_Fim_de_Jogo
+   195                                  
+   196 00000142 89CA                        MOV     DX, CX
+   197 00000144 59                          POP     CX
+   198 00000145 5B                          POP     BX
+   199 00000146 58                          POP     AX
+   200 00000147 9D                          POPF
+   201                                  
+   202 00000148 C3                          RET
+   203                                  
+   204                                  ;Desenha linhas brancas em volta das mensagens
+   205                                  empty_block:
+   206                                      ; top
+   207 00000149 B89F00                  	MOV		AX, 159
+   208 0000014C 50                      	PUSH    AX
+   209 0000014D B83F01                  	MOV     AX, 319
+   210 00000150 50                      	PUSH    AX
+   211 00000151 B8DF01                  	MOV     AX, 479
+   212 00000154 50                      	PUSH    AX
+   213 00000155 B83F01                  	MOV     AX, 319
+   214 00000158 50                      	PUSH    AX
+   215 00000159 E8(0000)                	call    line
+   216                                  	
+   217                                  	; left
+   218 0000015C B89F00                  	MOV     AX, 159
+   219 0000015F 50                      	PUSH    AX
+   220 00000160 B83F01                  	MOV     AX, 319
+   221 00000163 50                      	PUSH    AX
+   222 00000164 B89F00                  	MOV     AX, 159
+   223 00000167 50                      	PUSH    AX
+   224 00000168 B89F00                  	MOV     AX, 159
+   225 0000016B 50                      	PUSH    AX
+   226 0000016C E8(0000)                	call    line
+   227                                  	
+   228                                  	; right
+   229 0000016F B8DF01                  	MOV     AX, 479
+   230 00000172 50                      	PUSH    AX
+   231 00000173 B83F01                  	MOV     AX, 319
+   232 00000176 50                      	PUSH    AX
+   233 00000177 B8DF01                  	MOV     AX, 479
+   234 0000017A 50                      	PUSH    AX
+   235 0000017B B89F00                  	MOV     AX, 159
+   236 0000017E 50                      	PUSH    AX
+   237 0000017F E8(0000)                	CALL    line
+   238                                  
+   239                                      ; bottom
+   240 00000182 B89F00                  	MOV		AX, 159
+   241 00000185 50                      	PUSH    AX
+   242 00000186 B89F00                  	MOV     AX, 159
+   243 00000189 50                      	PUSH    AX
+   244 0000018A B8DF01                  	MOV     AX, 479
+   245 0000018D 50                      	PUSH    AX
+   246 0000018E B89F00                  	MOV     AX, 159
+   247 00000191 50                      	PUSH    AX
+   248 00000192 E8(0000)                	call    line
+   249                                  
+   250 00000195 C3                          RET

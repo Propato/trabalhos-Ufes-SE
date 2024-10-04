@@ -1,0 +1,110 @@
+     1                                  ;-----------------------------------------------------------------------------
+     2                                  ;    funções init_platform e mover_plataforma
+     3                                  ; cor definida na variavel cor					  
+     4                                  global init_platform, mover_plataforma
+     5                                  extern draw_block, cor, x, y, raio, direction_x, direction_y, plataforma_x1, plataforma_x2, plataforma_y1, plataforma_y2, direcao_plataforma, step_platform
+     6                                  
+     7                                  init_platform:
+     8                                      ; Salva o contexto, empilhando registradores
+     9 00000000 9C                          PUSHF
+    10 00000001 50                          PUSH    AX
+    11                                  ; Desenha a plataforma na posição inicial
+    12 00000002 C606[0000]01            	MOV		byte[cor], 1
+    13 00000007 A1[0000]                	MOV		AX, [plataforma_x1]
+    14 0000000A 50                      	PUSH	AX
+    15 0000000B A1[0000]                	MOV		AX, [plataforma_y1]
+    16 0000000E 50                      	PUSH	AX
+    17 0000000F A1[0000]                	MOV		AX, [plataforma_x2]
+    18 00000012 50                      	PUSH	AX
+    19 00000013 A1[0000]                	MOV		AX, [plataforma_y2]
+    20 00000016 50                      	PUSH	AX
+    21 00000017 E8(0000)                	CALL	draw_block
+    22                                  
+    23 0000001A 58                      	POP		AX
+    24 0000001B 9D                      	POPF
+    25 0000001C C3                      	RET
+    26                                  
+    27                                  mover_plataforma:
+    28 0000001D 9C                      	PUSHF
+    29 0000001E 50                          PUSH    AX
+    30 0000001F 53                      	PUSH 	BX
+    31                                  
+    32 00000020 BB[0000]                	MOV 	BX, step_platform
+    33                                  
+    34 00000023 803E[0000]01            	CMP 	byte[direcao_plataforma], 1
+    35 00000028 754A                    	JNE 	move_esquerda
+    36                                  
+    37 0000002A A1[0000]                	MOV		AX, WORD [plataforma_x2]
+    38 0000002D 01D8                    	ADD 	AX, BX
+    39                                  	; verificando o limite à direita
+    40 0000002F 3D7B02                  	CMP 	AX, 635
+    41 00000032 7605                    	JBE 		Move_direita
+    42                                  
+    43 00000034 2D7B02                  	SUB		AX, 635
+    44 00000037 29C3                    	SUB		BX, AX
+    45                                  Move_direita:
+    46 00000039 C606[0000]00            	MOV		byte [cor], 0	; pinta de preto
+    47 0000003E A1[0000]                	MOV		AX, [plataforma_x1]
+    48 00000041 50                      	PUSH	AX
+    49 00000042 A1[0000]                	MOV		AX, [plataforma_y1]
+    50 00000045 50                      	PUSH	AX
+    51 00000046 011E[0000]              	ADD		WORD [plataforma_x1], BX
+    52 0000004A A1[0000]                	MOV		AX, [plataforma_x1]
+    53 0000004D 50                      	PUSH	AX
+    54 0000004E A1[0000]                	MOV		AX, [plataforma_y2]
+    55 00000051 50                      	PUSH	AX
+    56 00000052 E8(0000)                	CALL 	draw_block
+    57                                  ; Desenhando a nova plataforma
+    58 00000055 C606[0000]01            	MOV		byte [cor], 1	; pinta de azul
+    59 0000005A A1[0000]                	MOV		AX, [plataforma_x2]
+    60 0000005D 50                      	PUSH	AX
+    61 0000005E A1[0000]                	MOV		AX, [plataforma_y1]
+    62 00000061 50                      	PUSH	AX
+    63 00000062 011E[0000]              	ADD		WORD [plataforma_x2], BX
+    64 00000066 A1[0000]                	MOV		AX, [plataforma_x2]
+    65 00000069 50                      	PUSH	AX
+    66 0000006A A1[0000]                	MOV		AX, [plataforma_y2]
+    67 0000006D 50                      	PUSH	AX
+    68 0000006E E8(0000)                	CALL 	draw_block
+    69                                  
+    70 00000071 E94800                  	JMP fim_mover_plataforma
+    71                                  
+    72                                  move_esquerda:
+    73 00000074 A1[0000]                	MOV		AX, WORD [plataforma_x1]
+    74                                  	; verificando o limite à esquerda
+    75 00000077 81C30400                	ADD 	BX, 4
+    76 0000007B 39D8                    	CMP 	AX, BX
+    77 0000007D 7305                    	JAE		desenha_esquerda
+    78                                  
+    79 0000007F 2D0400                  	SUB		AX, 4
+    80 00000082 89C3                    	MOV		BX, AX
+    81                                  desenha_esquerda:
+    82 00000084 C606[0000]00            	MOV		byte [cor], 0	; pinta de preto
+    83 00000089 A1[0000]                	MOV		AX, [plataforma_x2]
+    84 0000008C 50                      	PUSH	AX
+    85 0000008D A1[0000]                	MOV		AX, [plataforma_y1]
+    86 00000090 50                      	PUSH	AX
+    87 00000091 291E[0000]              	SUB		WORD [plataforma_x2], BX
+    88 00000095 A1[0000]                	MOV		AX, [plataforma_x2]
+    89 00000098 50                      	PUSH	AX
+    90 00000099 A1[0000]                	MOV		AX, [plataforma_y2]
+    91 0000009C 50                      	PUSH	AX
+    92 0000009D E8(0000)                	CALL 	draw_block
+    93                                  ; Desenhando a nova plataforma
+    94 000000A0 C606[0000]01            	MOV		byte [cor], 1	; pinta de azul
+    95 000000A5 A1[0000]                	MOV		AX, [plataforma_x1]
+    96 000000A8 50                      	PUSH	AX
+    97 000000A9 A1[0000]                	MOV		AX, [plataforma_y1]
+    98 000000AC 50                      	PUSH	AX
+    99 000000AD 291E[0000]              	SUB		WORD [plataforma_x1], BX
+   100 000000B1 A1[0000]                	MOV		AX, [plataforma_x1]
+   101 000000B4 50                      	PUSH	AX
+   102 000000B5 A1[0000]                	MOV		AX, [plataforma_y2]
+   103 000000B8 50                      	PUSH	AX
+   104 000000B9 E8(0000)                	CALL 	draw_block
+   105                                  
+   106                                  fim_mover_plataforma:
+   107 000000BC 5B                      	POP 	BX
+   108 000000BD 58                      	POP 	AX
+   109 000000BE 9D                      	POPF
+   110 000000BF C3                      	RET

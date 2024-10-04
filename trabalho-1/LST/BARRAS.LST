@@ -1,0 +1,91 @@
+     1                                  ;-----------------------------------------------------------------------------
+     2                                  ;    funções init
+     3                                  ; cor definida na variavel cor					  
+     4                                  global init_structure
+     5                                  extern line, full_circle, cursor, caracter, cor, mens
+     6                                  
+     7                                  init_structure:	; desenha_estrutura
+     8                                  	
+     9                                  	; Salvando o contexto, empilhando registradores		
+    10 00000000 9C                      	PUSHF
+    11 00000001 50                      	PUSH 	AX
+    12 00000002 53                      	PUSH 	BX
+    13 00000003 51                      	PUSH	CX
+    14 00000004 52                      	PUSH	DX
+    15                                  
+    16                                  	; esfera esquerda
+    17 00000005 C606[0000]04            	MOV     byte[cor], 4 		; vermelho	
+    18 0000000A B8FE00                  	MOV     AX, 254
+    19 0000000D 50                      	PUSH    AX
+    20 0000000E B8D701                  	MOV     AX, 471
+    21 00000011 50                      	PUSH    AX
+    22 00000012 B80700                  	MOV     AX, 7
+    23 00000015 50                      	PUSH    AX
+    24 00000016 E8(0000)                	CALL    full_circle
+    25                                  	
+    26                                  	; esfera direita
+    27 00000019 C606[0000]04            	MOV     byte[cor], 4 		; vermelho 	
+    28 0000001E B88101                  	MOV     AX, 385
+    29 00000021 50                      	PUSH    AX
+    30 00000022 B8D701                  	MOV     AX, 471
+    31 00000025 50                      	PUSH    AX
+    32 00000026 B80700                  	MOV     AX, 7
+    33 00000029 50                      	PUSH    AX
+    34 0000002A E8(0000)                	CALL    full_circle
+    35                                  	
+    36                                  	; top
+    37 0000002D C606[0000]07            	MOV     byte[cor], 7 		; branco    
+    38 00000032 B80000                  	MOV		AX, 0
+    39 00000035 50                      	PUSH    AX
+    40 00000036 B8CF01                  	MOV     AX, 463
+    41 00000039 50                      	PUSH    AX
+    42 0000003A B87F02                  	MOV     AX, 639
+    43 0000003D 50                      	PUSH    AX
+    44 0000003E B8CF01                  	MOV     AX, 463
+    45 00000041 50                      	PUSH    AX
+    46 00000042 E8(0000)                	call    line
+    47                                  	
+    48                                  	; left
+    49 00000045 C606[0000]07            	MOV		byte[cor], 7 		; branco    
+    50 0000004A B80000                  	MOV     AX, 0
+    51 0000004D 50                      	PUSH    AX
+    52 0000004E B80000                  	MOV     AX, 0
+    53 00000051 50                      	PUSH    AX
+    54 00000052 B80000                  	MOV     AX, 0
+    55 00000055 50                      	PUSH    AX
+    56 00000056 B8DF01                  	MOV     AX, 479
+    57 00000059 50                      	PUSH    AX
+    58 0000005A E8(0000)                	call    line
+    59                                  	
+    60                                  	; right
+    61 0000005D C606[0000]07            	MOV		byte[cor], 7 		; branco    
+    62 00000062 B87F02                  	MOV     AX, 639
+    63 00000065 50                      	PUSH    AX
+    64 00000066 B80000                  	MOV     AX, 0
+    65 00000069 50                      	PUSH    AX
+    66 0000006A B87F02                  	MOV     AX, 639
+    67 0000006D 50                      	PUSH    AX
+    68 0000006E B8DF01                  	MOV     AX, 479
+    69 00000071 50                      	PUSH    AX
+    70 00000072 E8(0000)                	CALL    line
+    71                                  
+    72                                  ; escrever palavra
+    73 00000075 B90900                  	MOV     CX, 9            	; namero de caracteres
+    74 00000078 BB0000                  	MOV     BX, 0
+    75 0000007B B600                    	MOV     DH, 0            	; linha 0-29
+    76 0000007D B223                    	MOV     DL, 35           	; coluna 0-79
+    77 0000007F C606[0000]0C            	MOV		byte[cor], 12 		; rosa
+    78                                  lpMens:
+    79 00000084 E8(0000)                	CALL    cursor
+    80 00000087 8A87[0000]              	MOV     AL, [BX+mens]
+    81 0000008B E8(0000)                	CALL    caracter
+    82 0000008E 43                      	INC     BX            		; proximo caracter
+    83 0000008F FEC2                    	INC     DL            		; avanca a coluna
+    84 00000091 E2F1                    	LOOP    lpMens
+    85                                  
+    86 00000093 5A                      	POP		DX
+    87 00000094 59                      	POP		CX
+    88 00000095 5B                      	POP		BX
+    89 00000096 58                      	POP		AX
+    90 00000097 9D                      	POPF
+    91 00000098 C3                      	RET

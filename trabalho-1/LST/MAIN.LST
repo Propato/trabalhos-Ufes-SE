@@ -1,0 +1,309 @@
+     1                                  
+     2                                  ;Bruno e David - Semestre 2024/1 - Engenharia Elétrica/Computação - UFES
+     3                                  ;------------------------------------------------------------------------------------------------
+     4                                  segment code
+     5                                  _start:
+     6 00000000 B8[0000]                    MOV     AX,data			;Inicializa os registradores
+     7 00000003 8ED8                    	MOV 	DS,AX
+     8 00000005 B8[0000]                	MOV 	AX,stack
+     9 00000008 8ED0                    	MOV 	SS,AX
+    10 0000000A BC[0200]                	MOV 	SP,stacktop
+    11                                  
+    12                                  ; Salvar modo corrente de video(vendo como esta o modo de video da maquina)
+    13 0000000D B40F                    	MOV  	AH,0Fh
+    14 0000000F CD10                    	INT  	10h
+    15 00000011 A2[0E00]                	MOV  	[modo_anterior],AL   
+    16                                  
+    17                                  ; Alterar modo de video para grafico 640x480 16 cores
+    18 00000014 B012                    	MOV     AL,12h
+    19 00000016 B400                    	MOV     AH,0
+    20 00000018 CD10                    	INT     10h
+    21                                  
+    22 0000001A E8(0000)                	CALL 	init_structure
+    23                                  inicio:
+    24                                  ; Desenha_estruturas
+    25 0000001D E8(0000)                	CALL 	init_block
+    26 00000020 E8(0000)                	CALL 	init_platform
+    27 00000023 E8(0000)                	CALL 	init_ball
+    28                                  
+    29                                  ; Inicia jogo
+    30                                  InicioPause:
+    31 00000026 E8(0000)                	CALL 	write_init
+    32 00000029 B408                    	MOV		AH, 08h     ; Ler caracter da STDIN
+    33 0000002B CD21                    	INT		21H
+    34                                  
+    35 0000002D 3C0D                    	CMP		AL, 13     ; Verifica se Enter foi pessionada. Se foi, inicia/despausa o jogo.
+    36 0000002F 740B                    	JE		continue
+    37 00000031 3C70                    	CMP		AL, 112     ; Verifica se p foi pessionada. Se foi, inicia/despausa o jogo.
+    38 00000033 7407                    	JE		continue
+    39 00000035 3C71                    	CMP		AL, 'q'     ; Verifica se q foi pressionada. Se foi, encerra o jogo
+    40 00000037 75ED                    	JNE		InicioPause
+    41 00000039 E97F00                  	JMP		end
+    42                                  
+    43                                  continue:
+    44 0000003C E8(0000)                	CALL arase		; apaga a mensagem inicial
+    45                                  game:
+    46 0000003F B40B                        MOV 	AH, 0bh
+    47 00000041 CD21                        INT 	21h         	; Le buffer de teclado
+    48                                      
+    49 00000043 3C00                    	CMP 	AL, 0         	; Se AL =0 nada foi digitado. Se AL =255 então há algum caracter na STDIN
+    50 00000045 751C                        JNE 	ler_entradas
+    51                                  
+    52                                  segue:
+    53 00000047 B8000C                  	MOV		AX, 0C00h
+    54 0000004A CD21                    	INT 	21h 			; clean buff
+    55                                  
+    56 0000004C E8(0000)                	CALL 	draw_ball ; desenha esfera
+    57 0000004F E83E00                      CALL	delay
+    58 00000052 803E[0C00]00            	CMP		BYTE [over], 0		; checa se foi game over
+    59 00000057 754C                    	JNE		restart
+    60 00000059 803E[0D00]00            	CMP		BYTE [vitoria], 0	; checa se foi vitoria
+    61 0000005E 75DF                    	JNE		game
+    62 00000060 E93C00                  	JMP 	fim_vitoria
+    63                                  
+    64                                  ; Função para ler a entrada do usuário
+    65                                  ler_entradas:
+    66 00000063 B408                        MOV		AH, 08H     ; Ler caracter da STDIN
+    67 00000065 CD21                    	INT		21H
+    68                                  
+    69 00000067 3C70                    	CMP		AL, 'p'	    ; Verifica se foi 'p'. Se foi, pausa o programa
+    70 00000069 74BB                    	JE		InicioPause
+    71                                  	
+    72 0000006B 3C64                        CMP		AL, 'd'				;Verifica se é a tecla 'd' (para direita)
+    73 0000006D 740B                    	JE		platform_direita
+    74                                    
+    75 0000006F 3C61                        CMP		AL, 'a'				  ; Verifica se é a tecla 'a' (para esquerda)
+    76 00000071 7412                    	JE 		platform_esquerda
+    77                                  	
+    78 00000073 3C71                    	CMP		AL, 'q'     ; Verifica se foi 'q'. Se foi, finaliza o programa
+    79 00000075 75D0                    	JNE		segue
+    80 00000077 E94100                  	JMP 	end
+    81                                  
+    82                                  
+    83                                  platform_direita:
+    84 0000007A C606[0B00]01            	MOV 	byte[direcao_plataforma], 1
+    85 0000007F E8(0000)                	CALL 	mover_plataforma
+    86 00000082 E9C2FF                  	JMP 	segue
+    87                                  
+    88                                  platform_esquerda:
+    89 00000085 C606[0B00]00            	MOV 	byte[direcao_plataforma], 0
+    90 0000008A E8(0000)                	CALL 	mover_plataforma
+    91 0000008D E9B7FF                  	JMP 	segue
+    92                                  
+    93                                  delay:
+    94 00000090 51                          PUSH	CX
+    95 00000091 B95A00                      MOV		CX, velocidade
+    96                                  del2:
+    97 00000094 51                          PUSH 	CX         ; Coloca CX na pilha para usa-lo em outro loop
+    98 00000095 B90008                      MOV 	CX, 0800h     ; Teste modificando este valor
+    99                                  del1:
+   100 00000098 E2FE                        LOOP	del1         ; No loop del1, CX é decrementado até que volte a ser zero
+   101 0000009A 59                          POP 	CX             ; Recupera CX da pilha
+   102 0000009B E2F7                        LOOP 	del2         ; No loop del2, CX é decrementado até que seja zero
+   103 0000009D 59                          POP 	CX
+   104 0000009E C3                      	RET
+   105                                  
+   106                                  fim_vitoria:
+   107 0000009F E8(0000)                	CALL 	write_game_win		; escreve mensagem de vitoria
+   108 000000A2 E90300                  	JMP		Ler_S_ou_N
+   109                                  restart:
+   110 000000A5 E8(0000)                	CALL	write_game_over		; escreve mensagem de game over
+   111                                  Ler_S_ou_N:
+   112 000000A8 B408                    	MOV		AH, 08H     ; Ler caracter da STDIN
+   113 000000AA CD21                    	INT		21H
+   114                                  
+   115 000000AC 3C6E                    	CMP		AL, 'n'     ; Verifica se foi 'n'. Se foi, finaliza o programa
+   116 000000AE 740B                    	JE		end
+   117                                  
+   118 000000B0 3C71                    	CMP		AL, 'q'	    ; Verifica se foi 'q'. Se foi, encerra o jogo
+   119 000000B2 7407                    	JE		end
+   120                                  
+   121 000000B4 3C73                    	CMP		AL, 's'	    ; Verifica se foi 's'. Se foi, reinicia o jogo
+   122 000000B6 740F                    	JE		reset_valores
+   123                                  	
+   124 000000B8 E9EDFF                  	JMP		Ler_S_ou_N
+   125                                  
+   126                                  end:		; encerra_programa
+   127 000000BB B400                    	MOV  	AH, 0   						; set video mode
+   128 000000BD A0[0E00]                	MOV  	AL, [modo_anterior]   		; modo anterior
+   129 000000C0 CD10                    	INT  	10h
+   130                                  
+   131 000000C2 B8004C                  	MOV     AX, 4c00h
+   132 000000C5 CD21                    	INT     21h
+   133                                  
+   134                                  ;Renicia todas as variáveis para jogar novamente ou passar de fase
+   135                                  reset_valores:
+   136                                  
+   137 000000C7 C606[0000]00            	MOV		byte[cor], 0    ; preto
+   138 000000CC A1[1700]                	MOV     AX, [x]
+   139 000000CF 50                      	PUSH    AX
+   140 000000D0 A1[1900]                	MOV     AX, [y]
+   141 000000D3 50                      	PUSH    AX
+   142 000000D4 B80E00                  	MOV     AX, raio
+   143 000000D7 50                      	PUSH    AX
+   144 000000D8 E8(0000)                	CALL    full_circle
+   145                                  
+   146 000000DB C606[0000]00            	MOV		byte[cor], 0
+   147 000000E0 A1[0300]                	MOV		AX, [plataforma_x1]
+   148 000000E3 50                      	PUSH	AX
+   149 000000E4 A1[0500]                	MOV		AX, [plataforma_y1]
+   150 000000E7 50                      	PUSH	AX
+   151 000000E8 A1[0700]                	MOV		AX, [plataforma_x2]
+   152 000000EB 50                      	PUSH	AX
+   153 000000EC A1[0900]                	MOV		AX, [plataforma_y2]
+   154 000000EF 50                      	PUSH	AX
+   155 000000F0 E8(0000)                	CALL	draw_block
+   156                                  
+   157 000000F3 C706[0300]0801              MOV 	WORD[plataforma_x1], 264
+   158 000000F9 C706[0700]7601              MOV 	WORD[plataforma_x2], 374
+   159 000000FF C606[0B00]01                MOV 	BYTE[direcao_plataforma], 1
+   160                                  
+   161 00000104 C706[1700]4001              MOV 	WORD[x], 320
+   162 0000010A C706[1900]4600              MOV 	WORD[y], 70    
+   163 00000110 C606[1C00]01                MOV 	BYTE[direction_y], 1	            
+   164                                  
+   165 00000115 C706[0F00]0000          	MOV		WORD[linha], 0
+   166 0000011B C706[1100]0000          	MOV 	WORD[coluna], 0
+   167 00000121 C706[1500]0000          	MOV 	WORD[deltaY], 0
+   168 00000127 C706[1300]0000          	MOV 	WORD[deltaX], 0
+   169                                  
+   170 0000012D 803E[0D00]00            	CMP 	BYTE [vitoria], 0
+   171 00000132 750E                    	JNE		minLinhas
+   172 00000134 803E[1D00]04            	CMP		BYTE [NLinhasblocos], 4
+   173 00000139 740C                    	JE		maxLinhas
+   174                                  
+   175 0000013B FE06[1D00]              	INC 	BYTE [NLinhasblocos]
+   176 0000013F E90500                  	JMP		maxLinhas
+   177                                  minLinhas:
+   178 00000142 C606[1D00]01            	MOV		BYTE [NLinhasblocos], 1
+   179                                  maxLinhas:
+   180                                  		
+   181 00000147 803E[0C00]01            	CMP		BYTE[over], 1
+   182 0000014C 751E                    	JNE		blocos_limpos
+   183 0000014E C706[0100]0A00          	MOV 	WORD[step], 10
+   184                                  	; APAGA BLOCOS RESTANTES
+   185 00000154 B80A00                  	MOV 	AX, 10
+   186 00000157 50                      	PUSH	AX
+   187 00000158 B8AB01                  	MOV 	AX, 427
+   188 0000015B 50                      	PUSH	AX
+   189 0000015C B87602                  	MOV 	AX, 630
+   190 0000015F 50                      	PUSH	AX
+   191 00000160 B86301                  	MOV 	AX, 355
+   192 00000163 50                      	PUSH	AX
+   193 00000164 C606[0000]00            	MOV		byte [cor], 0
+   194 00000169 E8(0000)                	CALL 	draw_block
+   195                                  blocos_limpos:
+   196 0000016C 8106[0100]0400          	ADD 	WORD[step], 4
+   197 00000172 C606[0C00]00            	MOV		BYTE[over], 0
+   198 00000177 BC[0200]                	MOV 	SP,stacktop
+   199 0000017A E9A0FE                      JMP 	inicio				
+   200                                  
+   201                                  ;*******************************************************************
+   202                                  
+   203                                  %include "asm/data.asm"
+   204                              <1> global step_platform, plataforma_x1, plataforma_x2, plataforma_y1, plataforma_y2, direcao_plataforma
+   205                              <1> global x, y, direction_x, direction_y, step, raio 
+   206                              <1> global cor, over, vitoria, mens, mens_game_win, mens_game_over, velocidade, deltaX, deltaY, NLinhasblocos, blocos, blocos_enable
+   207                              <1> 
+   208                              <1> extern cursor, write_init, write_game_over, arase, mover_plataforma, caracter, init_structure, init_block, init_platform, init_ball, draw_ball, full_circle, draw_block, write_game_win
+   209                              <1> 
+   210                              <1> segment data
+   211                              <1> 
+   212 00000000 0F                  <1> cor		db		branco_intenso
+   213                              <1> 
+   214                              <1> ;	I R G B COR
+   215                              <1> ;	0 0 0 0 preto
+   216                              <1> ;	0 0 0 1 azul
+   217                              <1> ;	0 0 1 0 verde
+   218                              <1> ;	0 0 1 1 cyan
+   219                              <1> ;	0 1 0 0 vermelho
+   220                              <1> ;	0 1 0 1 magenta
+   221                              <1> ;	0 1 1 0 marrom
+   222                              <1> ;	0 1 1 1 branco
+   223                              <1> ;	1 0 0 0 cinza
+   224                              <1> ;	1 0 0 1 azul claro
+   225                              <1> ;	1 0 1 0 verde claro
+   226                              <1> ;	1 0 1 1 cyan claro
+   227                              <1> ;	1 1 0 0 rosa
+   228                              <1> ;	1 1 0 1 magenta claro
+   229                              <1> ;	1 1 1 0 amarelo
+   230                              <1> ;	1 1 1 1 branco intenso
+   231                              <1> 
+   232                              <1> 
+   233                              <1> ;Define cores
+   234                              <1> preto		    equ		0
+   235                              <1> azul		    equ		1
+   236                              <1> verde		    equ		2
+   237                              <1> cyan		    equ		3
+   238                              <1> vermelho	    equ		4
+   239                              <1> magenta		    equ		5
+   240                              <1> marrom		    equ		6
+   241                              <1> branco		    equ		7
+   242                              <1> cinza		    equ		8
+   243                              <1> azul_claro	    equ		9
+   244                              <1> verde_claro	    equ		10
+   245                              <1> cyan_claro	    equ		11
+   246                              <1> rosa		    equ		12
+   247                              <1> magenta_claro	equ		13
+   248                              <1> amarelo		    equ		14
+   249                              <1> branco_intenso	equ		15
+   250                              <1> 
+   251                              <1> ;Variáveis
+   252 00000001 0E00                <1> step 		    dw	    14              ; se o step for mt grande, a bolinha pode 'atravessar' os blocos
+   253                              <1> step_platform   EQU     25
+   254                              <1> velocidade  	EQU		90	            ; quanto menor, mais rápido
+   255                              <1> raio		    EQU	    14
+   256                              <1> 
+   257 00000003 0801                <1> plataforma_x1   dw      264
+   258 00000005 2D00                <1> plataforma_y1   dw      45                     ;Comprimento Superior
+   259 00000007 7601                <1> plataforma_x2   dw      374
+   260 00000009 1E00                <1> plataforma_y2   dw      30                     ;Comprimento Inferior
+   261 0000000B 01                  <1> direcao_plataforma  db  1
+   262                              <1> 
+   263 0000000C 00                  <1> over    	    db		0
+   264 0000000D 00                  <1> vitoria         db      0
+   265                              <1> 
+   266 0000000E 00                  <1> modo_anterior	db		0
+   267 0000000F 0000                <1> linha		    dw		0
+   268 00000011 0000                <1> coluna      	dw		0
+   269 00000013 0000                <1> deltaX      	dw		0
+   270 00000015 0000                <1> deltaY	    	dw		0
+   271                              <1> 
+   272 00000017 4001                <1> x           	dw      320
+   273 00000019 4600                <1> y		        dw      70    
+   274 0000001B 01                  <1> direction_x	    db		1
+   275 0000001C 01                  <1> direction_y	    db		1
+   276                              <1> 
+   277                              <1> 
+   278 0000001D 01                  <1> NLinhasblocos   db      1       ; equivalente a fase
+   279 0000001E <res 00000078>      <1> blocos          resw    60      ; 6*5*2 -> NBlocos * MaxNLinhas * NVariaveis (x e y)
+   280 00000096 <res 0000001E>      <1> blocos_enable   resb    30      ; 6*5   -> NBlocos * MaxNLinhas
+   281                              <1> 
+   282                              <1> ;Variáveis para texto
+   283 000000B4 50494E4720504F4E47- <1> mens    	    db  	'PING PONG   [a] e [d] para mover plataforma[q] para sair e [p] para pausar[Enter] para comecar'     ; size = 12, 31, 31 e 20
+   284 000000BD 2020205B615D206520- <1>
+   285 000000C6 5B645D207061726120- <1>
+   286 000000CF 6D6F76657220706C61- <1>
+   287 000000D8 7461666F726D615B71- <1>
+   288 000000E1 5D2070617261207361- <1>
+   289 000000EA 69722065205B705D20- <1>
+   290 000000F3 706172612070617573- <1>
+   291 000000FC 61725B456E7465725D- <1>
+   292 00000105 207061726120636F6D- <1>
+   293 0000010E 65636172            <1>
+   294 00000112 20205669746F726961- <1> mens_game_win  db      '  VitoriaContinuar jogando?s (sim) e n (nao) '     ; size = 9, 18 e 18
+   295 0000011B 436F6E74696E756172- <1>
+   296 00000124 206A6F67616E646F3F- <1>
+   297 0000012D 73202873696D292065- <1>
+   298 00000136 206E20286E616F2920  <1>
+   299 0000013F 46696D206465204A6F- <1> mens_game_over  db      'Fim de JogoJogar novamente?s (sim) e n (nao)'     ; size = 11, 16 e 18
+   300 00000148 676F4A6F676172206E- <1>
+   301 00000151 6F76616D656E74653F- <1>
+   302 0000015A 73202873696D292065- <1>
+   303 00000163 206E20286E616F29    <1>
+   304                                  
+   305                                  ;*************************************************************************
+   306                                  segment stack stack
+   307 00000000 6504                    	DW 		1125
+   308                                  stacktop:
+   309                                  

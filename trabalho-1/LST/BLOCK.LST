@@ -1,0 +1,278 @@
+     1                                  ;-----------------------------------------------------------------------------
+     2                                  ;    funções init_block, draw_block
+     3                                  ; cor definida na variavel cor					  
+     4                                  global init_block, contato_blocos, draw_block
+     5                                  extern line, cor, x, y, raio, direction_x, direction_y, NLinhasblocos, blocos, blocos_enable, vitoria
+     6                                  
+     7                                  init_block:	; desenha_blocos
+     8                                  
+     9                                      ;Salvando o contexto, empilhando registradores		
+    10 00000000 9C                          PUSHF
+    11 00000001 50                          PUSH 	AX
+    12 00000002 53                          PUSH 	BX
+    13 00000003 51                          PUSH	CX
+    14 00000004 52                          PUSH	DX
+    15 00000005 57                          PUSH	DI
+    16 00000006 56                      	PUSH 	SI
+    17                                  
+    18 00000007 B006                    	MOV		AL, 6					; Numero de blocos por linha
+    19 00000009 F626[0000]              	MUL		BYTE [NLinhasblocos]
+    20                                  
+    21 0000000D 89C1                    	MOV		CX, AX
+    22 0000000F BE0000                  	MOV		SI, 0
+    23 00000012 880E[0000]              	MOV		BYTE [vitoria], CL
+    24                                  
+    25                                  lpInitEnables:
+    26 00000016 C684[0000]01            	MOV		BYTE [blocos_enable+SI], 1
+    27 0000001B 46                      	INC		SI
+    28 0000001C E2F8                    	LOOP	lpInitEnables
+    29                                  
+    30 0000001E B404                    	MOV		AH, 4
+    31 00000020 F6E4                    	MUL		AH
+    32 00000022 89C6                    	MOV		SI, AX				; NA SEQUENCIA NA VARIAVEL blocos, OS ULTIMOS BYTES SAO OS VALORES DOS PRIMEIROS BLOCOS
+    33                                  
+    34 00000024 31C9                    	XOR		CX, CX
+    35 00000026 020E[0000]              	ADD	    CL, BYTE[NLinhasblocos]		; NUMERO DE LINHAS PASSA PARA CX
+    36                                  	
+    37 0000002A BBC501                  	MOV	    BX, 453					; Y1, VARIA CONFORME A LINHA
+    38 0000002D BFB301                  	MOV	    DI, 435					; Y2, VARIA CONFORME A LINHA
+    39 00000030 C606[0000]02            	MOV     byte[cor], 2    		; verde
+    40                                  
+    41                                  lpLinhaBlocos:
+    42 00000035 51                      	PUSH	CX
+    43 00000036 B90600                  	MOV     CX, 6					; 6 COLUNAS
+    44                                  
+    45 00000039 B80A00                  	MOV     AX, 10					; X1, VARIA CONFORME A COLUNA
+    46 0000003C BA6900                  	MOV     DX, 105					; X2, VARIA CONFORME A COLUNA 
+    47                                  
+    48                                  lpBlocos:
+    49                                  	; ARMAZENA PONTO ESQUERDO INFERIOR DO BLOCO
+    50 0000003F 81EE0200                	SUB		SI, 2
+    51 00000043 89BC[0000]              	MOV		WORD[blocos+SI], DI		; Y1
+    52 00000047 81EE0200                	SUB		SI, 2
+    53 0000004B 8984[0000]              	MOV		WORD[blocos+SI], AX		; X1
+    54                                  
+    55 0000004F 50                      	PUSH	AX
+    56 00000050 53                      	PUSH	BX
+    57 00000051 52                      	PUSH	DX
+    58 00000052 57                      	PUSH	DI
+    59 00000053 E80701                  	CALL	draw_block
+    60                                  	
+    61 00000056 056900                  	ADD	    AX, 105
+    62 00000059 81C26900                	ADD	    DX, 105
+    63 0000005D FE06[0000]              	INC	    byte[cor]
+    64 00000061 E2DC                    	LOOP	lpBlocos
+    65                                  
+    66 00000063 59                      	POP	    CX
+    67 00000064 81EB1A00                	SUB	    BX, 26
+    68 00000068 81EF1A00                	SUB	    DI, 26
+    69                                  
+    70 0000006C E2C7                    	LOOP    lpLinhaBlocos
+    71                                  
+    72 0000006E 5E                      	POP 	SI
+    73 0000006F 5F                      	POP		DI
+    74 00000070 5A                      	POP		DX
+    75 00000071 59                      	POP		CX
+    76 00000072 5B                      	POP		BX
+    77 00000073 58                      	POP		AX
+    78 00000074 9D                      	POPF
+    79 00000075 C3                      	RET
+    80                                  
+    81                                  contato_blocos:
+    82 00000076 53                      	PUSH	BX
+    83 00000077 51                      	PUSH	CX
+    84 00000078 56                      	PUSH	SI
+    85 00000079 57                      	PUSH	DI
+    86                                  
+    87                                  ; função de contato da esfera com os blocos
+    88 0000007A A1[0200]                	MOV		AX, WORD [blocos+2]
+    89 0000007D 2D[0000]                	SUB		AX, raio
+    90 00000080 3906[0000]              	CMP		WORD [y], AX
+    91 00000084 7303                    	JAE		contContato
+    92 00000086 E9CF00                  	JMP		ret_contato
+    93                                  contContato:
+    94 00000089 B006                    	MOV		AL, 6					; Numero de blocos por linha
+    95 0000008B F626[0000]              	MUL		BYTE [NLinhasblocos]	
+    96 0000008F 89C1                    	MOV		CX, AX					; CX = AX = N BLOCOS TOTAIS
+    97 00000091 BE0000                  	MOV		SI, 0					; ENABLE DO BLOCO
+    98 00000094 BF0000                  	MOV		DI, 0					; X1 E Y2 DO BLOCO (PONTO ESQUERDO INFERIOR)
+    99                                  
+   100                                  lpBlocosCheck:
+   101 00000097 80BC[0000]01            	CMP		BYTE [blocos_enable+SI], 1
+   102 0000009C 7403                    	JE		vertical
+   103 0000009E E98000                  	JMP		next_block
+   104                                  vertical:
+   105 000000A1 8B85[0000]              	MOV		AX, WORD [blocos+DI]
+   106 000000A5 8B9D[0200]              	MOV		BX, WORD [blocos+DI+2]
+   107                                  
+   108                                  ;	contato por baixo ou por cima
+   109 000000A9 3906[0000]              	CMP 	WORD [x], AX
+   110 000000AD 722D                    	JB		horizontal
+   111 000000AF 055F00                  	ADD		AX, 95
+   112 000000B2 3906[0000]              	CMP 	WORD [x], AX
+   113 000000B6 7724                    	JA		horizontal
+   114                                  
+   115 000000B8 81EB[0000]              	SUB		BX, raio
+   116 000000BC 391E[0000]              	CMP 	WORD [y], BX
+   117 000000C0 721A                    	JB		horizontal
+   118 000000C2 81C3[0000]              	ADD		BX, raio
+   119 000000C6 81C31200                	ADD		BX, 18
+   120 000000CA 81C3[0000]              	ADD		BX, raio
+   121 000000CE 391E[0000]              	CMP 	WORD [y], BX
+   122 000000D2 7708                    	JA		horizontal
+   123                                  	
+   124 000000D4 8036[0000]01            	XOR		BYTE [direction_y], 01h
+   125 000000D9 E95400                  	JMP		apaga_bloco
+   126                                  
+   127                                  ;	contato pelos lados
+   128                                  horizontal:
+   129 000000DC 8B85[0000]              	MOV		AX, WORD [blocos+DI]
+   130 000000E0 BB[0000]                	MOV		BX, raio
+   131 000000E3 D1EB                    	SHR		BX, 1
+   132                                  	;MOV		BX, WORD [blocos+DI+2]
+   133                                  
+   134 000000E5 2D[0000]                	SUB		AX, raio
+   135 000000E8 3906[0000]              	CMP 	WORD [x], AX
+   136 000000EC 7233                    	JB		next_block
+   137 000000EE 05[0000]                	ADD		AX, raio
+   138 000000F1 055F00                  	ADD		AX, 95
+   139 000000F4 05[0000]                	ADD		AX, raio
+   140 000000F7 3906[0000]              	CMP 	WORD [x], AX
+   141 000000FB 7724                    	JA		next_block
+   142                                  
+   143 000000FD 039D[0200]              	ADD 	BX, WORD [blocos+DI+2]
+   144 00000101 81C31200                	ADD 	BX, 18
+   145 00000105 391E[0000]              	CMP 	WORD [y], BX
+   146 00000109 7716                    	JA		next_block
+   147 0000010B 81EB1200                	SUB		BX, 18
+   148 0000010F 81EB[0000]              	SUB		BX, raio
+   149 00000113 391E[0000]              	CMP 	WORD [y], BX
+   150 00000117 7208                    	JB		next_block
+   151                                  
+   152 00000119 8036[0000]01            	XOR		BYTE [direction_x], 01h
+   153 0000011E E90F00                  	JMP		apaga_bloco
+   154                                  	
+   155                                  next_block:
+   156 00000121 46                      	INC		SI
+   157 00000122 81C70400                	ADD		DI, 4
+   158 00000126 49                      	DEC		CX
+   159 00000127 81F90000                	CMP		CX, 0
+   160 0000012B 742B                    	JE		ret_contato
+   161 0000012D E967FF                  	JMP		lpBlocosCheck
+   162                                  
+   163                                  apaga_bloco:
+   164 00000130 C684[0000]00            	MOV 	BYTE [blocos_enable+SI], 0
+   165 00000135 FE0E[0000]              	DEC		BYTE [vitoria]
+   166                                  
+   167 00000139 8B85[0000]              	MOV		AX, WORD [blocos+DI]
+   168 0000013D 8B9D[0200]              	MOV		BX, WORD [blocos+DI+2]
+   169                                  
+   170 00000141 50                      	PUSH	AX
+   171 00000142 81C31200                	ADD		BX, 18
+   172 00000146 53                      	PUSH	BX
+   173 00000147 055F00                  	ADD		AX, 95
+   174 0000014A 50                      	PUSH 	AX
+   175 0000014B 81EB1200                	SUB		BX, 18
+   176 0000014F 53                      	PUSH	BX
+   177 00000150 C606[0000]00            	MOV		byte [cor], 0
+   178 00000155 E80500                  	CALL 	draw_block
+   179                                  
+   180                                  ret_contato:
+   181 00000158 5F                      	POP 	DI
+   182 00000159 5E                      	POP		SI
+   183 0000015A 59                      	POP		CX
+   184 0000015B 5B                      	POP 	BX
+   185                                  	
+   186 0000015C C3                      	RET
+   187                                  
+   188                                  ;-----------------------------------------------------------------------------
+   189                                  ;
+   190                                  ;   função draw_block
+   191                                  ;
+   192                                  ; PUSH x1; PUSH y1; PUSH x2; PUSH y2; call block;  (x<639, y<479, y1>y2)
+   193                                  draw_block:
+   194 0000015D 55                          PUSH    BP
+   195 0000015E 89E5                        MOV     BP,SP
+   196 00000160 9C                          PUSHF                        ;coloca os flags na pilha
+   197 00000161 50                          PUSH    AX
+   198 00000162 53                      	PUSH    BX
+   199 00000163 51                      	PUSH    CX
+   200 00000164 52                      	PUSH	DX
+   201 00000165 57                      	PUSH    DI
+   202 00000166 56                      	PUSH	SI
+   203                                  
+   204 00000167 803E[0000]0F            	CMP		byte[cor], 15
+   205 0000016C 7205                    	JB		init_draw
+   206 0000016E C606[0000]02            	MOV		BYTE[cor], 2
+   207                                  
+   208                                  init_draw:
+   209 00000173 8B460A                  	MOV     AX,[BP+10]   ; resgata os valores das coordenadas
+   210 00000176 8B5E06                      MOV     BX,[BP+6]    ; resgata os valores das coordenadas
+   211 00000179 8B5604                      MOV     DX,[BP+4]    ; resgata os valores das coordenadas
+   212 0000017C 8B7E04                      MOV     DI,[BP+4]    ; resgata os valores das coordenadas
+   213                                  
+   214 0000017F 8B4E08                  	MOV     CX, [BP+8]
+   215 00000182 29D1                    	SUB     CX, DX
+   216                                  
+   217                                  L1:
+   218 00000184 50                      	PUSH    AX    ;
+   219 00000185 57                          PUSH    DI    ;
+   220 00000186 53                          PUSH    BX    ;
+   221 00000187 57                          PUSH    DI    ;
+   222                                  
+   223 00000188 E8(0000)                	CALL    line
+   224 0000018B 47                      	INC 	DI
+   225 0000018C E2F6                    	LOOP 	L1
+   226 0000018E 4F                      	DEC		DI
+   227                                  	
+   228 0000018F 803E[0000]00            	CMP		byte[cor], 0
+   229 00000194 7432                    	JE 		end_draw_block
+   230 00000196 803E[0000]01            	CMP		byte[cor], 1
+   231 0000019B 742B                    	JE 		end_draw_block
+   232                                  
+   233 0000019D 8B36[0000]              	MOV		SI, [cor]
+   234 000001A1 56                      	PUSH	SI
+   235 000001A2 C606[0000]07            	MOV		byte[cor], 7   ; branco 
+   236                                  
+   237                                  	; BOTTOM
+   238 000001A7 50                      	PUSH	AX
+   239 000001A8 52                      	PUSH   	DX
+   240 000001A9 53                      	PUSH   	BX
+   241 000001AA 52                      	PUSH 	DX
+   242 000001AB E8(0000)                	CALL 	line
+   243                                  	
+   244                                  	; TOP
+   245 000001AE 50                      	PUSH 	AX
+   246 000001AF 57                      	PUSH 	DI
+   247 000001B0 53                      	PUSH 	BX
+   248 000001B1 57                      	PUSH 	DI
+   249 000001B2 E8(0000)                	CALL 	line
+   250                                  
+   251                                  	; LEFT
+   252 000001B5 50                      	PUSH 	AX
+   253 000001B6 52                      	PUSH 	DX
+   254 000001B7 50                      	PUSH 	AX
+   255 000001B8 57                      	PUSH 	DI
+   256 000001B9 E8(0000)                	CALL 	line
+   257                                  
+   258                                  	; RIGHT
+   259 000001BC 53                      	PUSH 	BX
+   260 000001BD 52                      	PUSH 	DX
+   261 000001BE 53                      	PUSH 	BX
+   262 000001BF 57                      	PUSH 	DI
+   263 000001C0 E8(0000)                	CALL 	line
+   264                                  
+   265 000001C3 5E                      	POP		SI
+   266 000001C4 8936[0000]              	MOV		[cor], SI
+   267                                  	
+   268                                  end_draw_block:
+   269 000001C8 5E                      	POP		SI
+   270 000001C9 5F                      	POP     DI
+   271 000001CA 5A                          POP     DX
+   272 000001CB 59                          POP     CX
+   273 000001CC 5B                          POP     BX
+   274 000001CD 58                          POP     AX
+   275 000001CE 9D                          POPF
+   276 000001CF 5D                          POP     BP
+   277 000001D0 C20800                      RET     8
+   278                                  

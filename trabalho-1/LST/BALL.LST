@@ -1,0 +1,184 @@
+     1                                  ;-----------------------------------------------------------------------------
+     2                                  ;   funções init_ball, move_ball e touch_ball
+     3                                  ;   cor definida na variavel cor					  
+     4                                  global init_ball, draw_ball
+     5                                  extern cor, over, raio, step, x, y, direction_x, direction_y, plataforma_x1, plataforma_x2, plataforma_y1, plataforma_y2, full_circle, contato_blocos, draw_block
+     6                                  
+     7                                  init_ball:	; Desenha plataforma
+     8                                  
+     9                                      ;Salvando o contexto, empilhando registradores		
+    10 00000000 9C                          PUSHF
+    11 00000001 50                          PUSH 	AX
+    12                                  
+    13                                  	; DESENHA ESFERA NA POSICAO INICIAL
+    14 00000002 C606[0000]04            	MOV     byte[cor], 4    ; vermelho
+    15 00000007 A1[0000]                	MOV     AX, [x]
+    16 0000000A 50                      	PUSH    AX
+    17 0000000B A1[0000]                	MOV     AX, [y]
+    18 0000000E 50                      	PUSH    AX
+    19 0000000F B8[0000]                	MOV     AX, raio
+    20 00000012 50                      	PUSH    AX
+    21 00000013 E8(0000)                	CALL    full_circle
+    22                                  
+    23 00000016 58                      	POP		AX
+    24 00000017 9D                      	POPF
+    25 00000018 C3                      	RET
+    26                                  
+    27                                  draw_ball:	; desenha esfera
+    28                                  
+    29                                  	; Salva o contexto, empilha registradores		
+    30 00000019 9C                          PUSHF
+    31 0000001A 50                          PUSH 	AX
+    32                                  
+    33 0000001B E8(0000)                	CALL	contato_blocos
+    34                                  
+    35                                  	; APAGA ESFERA ANTERIOR
+    36 0000001E C606[0000]00            	MOV		byte[cor], 0    ; preto
+    37 00000023 A1[0000]                	MOV     AX, [x]
+    38 00000026 50                      	PUSH    AX
+    39 00000027 A1[0000]                	MOV     AX, [y]
+    40 0000002A 50                      	PUSH    AX
+    41 0000002B B8[0000]                	MOV     AX, raio
+    42 0000002E 50                      	PUSH    AX
+    43 0000002F E8(0000)                	CALL    full_circle
+    44                                  	
+    45 00000032 E81700                  	CALL    next_xy
+    46                                  
+    47                                  	; DESENHA ESFERA NA NOVA POSICAO
+    48 00000035 C606[0000]04            	MOV		byte[cor], 4    ; vermelho
+    49 0000003A A1[0000]                	MOV     AX, [x]
+    50 0000003D 50                      	PUSH    AX
+    51 0000003E A1[0000]                	MOV     AX, [y]
+    52 00000041 50                      	PUSH    AX
+    53 00000042 B8[0000]                	MOV     AX, raio
+    54 00000045 50                      	PUSH    AX
+    55 00000046 E8(0000)                	CALL    full_circle
+    56                                  
+    57 00000049 58                      	POP		AX
+    58 0000004A 9D                      	POPF
+    59                                  
+    60 0000004B C3                      	RET
+    61                                  
+    62                                  ; Calcula próxima posição da esfera
+    63                                  next_xy:
+    64 0000004C 57                      	PUSH	DI
+    65 0000004D 56                      	PUSH	SI
+    66 0000004E 53                      	PUSH 	BX
+    67                                  
+    68 0000004F BF7F02                  	MOV		DI, 639
+    69 00000052 BECE01                  	MOV		SI, 462
+    70 00000055 81EF[0000]              	SUB		DI, raio	; define limite direito
+    71 00000059 81EE[0000]              	SUB		SI, raio	; define limite superior
+    72                                  					; raio é o limite inferior e esquerdo
+    73                                  
+    74 0000005D 8B1E[0000]              	MOV 	BX, [step]	;Armazena o passo (step) da esfera em BX
+    75 00000061 89D8                    	MOV 	AX, BX
+    76 00000063 05[0000]                	ADD		AX, raio
+    77 00000066 803E[0000]01            	CMP 	BYTE [direction_x], 1
+    78 0000006B 7513                    	JNE 	left
+    79                                  
+    80                                  ;Movimento para a direita
+    81                                  right:
+    82 0000006D 011E[0000]              	ADD 	WORD [x], BX
+    83 00000071 393E[0000]              	CMP 	WORD [x], DI
+    84 00000075 7622                    	JBE 	up
+    85                                  
+    86 00000077 C606[0000]00            	MOV 	BYTE [direction_x], 0
+    87 0000007C 291E[0000]              	SUB 	WORD [x], BX
+    88                                  
+    89                                  ;Movimento para a esquerda
+    90                                  left:
+    91 00000080 3906[0000]              	CMP		WORD [x], AX	
+    92 00000084 760B                    	JBE 	change_to_right
+    93                                  
+    94 00000086 291E[0000]              	SUB 	WORD [x], BX
+    95 0000008A E90C00                  	JMP	 	up
+    96                                  
+    97 0000008D 011E[0000]              	ADD 	WORD [x], BX
+    98                                  change_to_right:						; Desvia para a direita
+    99 00000091 C606[0000]01            	MOV 	BYTE [direction_x], 1
+   100 00000096 E9D4FF                  	JMP 	right
+   101                                  
+   102                                  ;Movimento para cima
+   103                                  up:
+   104 00000099 803E[0000]01            	CMP 	BYTE [direction_y], 1
+   105 0000009E 7516                    	JNE 	down
+   106                                  
+   107 000000A0 011E[0000]              	ADD 	WORD [y], BX
+   108 000000A4 3936[0000]              	CMP 	WORD [y], SI
+   109 000000A8 7703                    	JA 		invertUP
+   110 000000AA E95000                  	JMP		return_next_xy
+   111                                  invertUP:
+   112 000000AD C606[0000]00            	MOV 	BYTE [direction_y], 0	
+   113 000000B2 291E[0000]              	SUB 	WORD [y], BX
+   114                                  
+   115                                  ;Movimento para baixo
+   116                                  down:
+   117 000000B6 3906[0000]              	CMP		WORD [y], AX			;Verifica se ultrapassou o limite inferior
+   118 000000BA 7303                    	JAE		notOver
+   119 000000BC E91B00                  	JMP		game_over			
+   120                                  notOver:
+   121 000000BF 291E[0000]              	SUB 	WORD [y], BX			; Caso não tenha atingido o limite inferior, continua descendo
+   122                                  	
+   123 000000C3 A1[0000]                	MOV 	AX, [plataforma_y1]
+   124 000000C6 05[0000]                	ADD 	AX, raio				; top da plataforma + raio (para chegar no pixel limite do centro da esfera)
+   125 000000C9 3906[0000]              	CMP 	WORD[y], AX				; Compara o limite inferior com o centro da esfera
+   126 000000CD 732E                    	JAE		return_next_xy
+   127                                  
+   128 000000CF E92F00                  	JMP 	checkColisao			; CHECA COLISÃO COM A PLATAFORMA
+   129                                  
+   130                                  bellow:
+   131 000000D2 813E[0000][0000]        	CMP 	WORD [y], raio
+   132 000000D8 7323                    	JAE 	return_next_xy
+   133                                  
+   134                                  ;Renicia o jogo
+   135                                  game_over:
+   136 000000DA C606[0000]01            	MOV		BYTE [over], 1
+   137 000000DF C706[0000][0000]        	MOV 	WORD [y], raio
+   138                                  
+   139 000000E5 C606[0000]01            	MOV 	BYTE [cor], 1
+   140 000000EA A1[0000]                	MOV		AX, [plataforma_x1]
+   141 000000ED 50                      	PUSH	AX
+   142 000000EE A1[0000]                	MOV		AX, [plataforma_y1]
+   143 000000F1 50                      	PUSH	AX
+   144 000000F2 A1[0000]                	MOV		AX, [plataforma_x2]
+   145 000000F5 50                      	PUSH	AX
+   146 000000F6 A1[0000]                	MOV		AX, [plataforma_y2]
+   147 000000F9 50                      	PUSH	AX
+   148 000000FA E8(0000)                	CALL 	draw_block
+   149                                  
+   150                                  
+   151                                  return_next_xy:						;Retorna para desenhar a plataforma na nova posição
+   152 000000FD 5B                      	POP 	BX
+   153 000000FE 5E                      	POP 	SI
+   154 000000FF 5F                      	POP 	DI
+   155 00000100 C3                      	RET
+   156                                  
+   157                                  checkColisao:
+   158 00000101 A1[0000]                	MOV		AX, [plataforma_x2]
+   159 00000104 3906[0000]              	CMP 	WORD[x], AX
+   160 00000108 77C8                    	JA 		bellow
+   161 0000010A A1[0000]                	MOV		AX, [plataforma_x1]
+   162 0000010D 3906[0000]              	CMP 	WORD[x], AX
+   163 00000111 72BF                    	JB 		bellow
+   164                                  
+   165 00000113 A1[0000]                	MOV		AX, [plataforma_y2]
+   166 00000116 3906[0000]              	CMP 	WORD[y], AX
+   167 0000011A 76B6                    	JBE		bellow
+   168                                  
+   169 0000011C C606[0000]01            	MOV 	BYTE [direction_y], 1
+   170 00000121 011E[0000]              	ADD 	WORD [y], BX
+   171                                  
+   172 00000125 89D8                    	MOV		AX, BX
+   173 00000127 D1E8                    	SHR		AX, 1
+   174 00000129 0306[0000]              	ADD 	AX, [plataforma_y1]
+   175 0000012D 05[0000]                	ADD 	AX, raio
+   176 00000130 3906[0000]              	CMP 	WORD[y], AX
+   177 00000134 760C                    	JBE		emCima
+   178 00000136 A1[0000]                	MOV		AX, [plataforma_y1]
+   179 00000139 05[0000]                	ADD 	AX, raio
+   180 0000013C A3[0000]                	MOV		WORD [y], AX
+   181 0000013F E9BBFF                  	JMP 	return_next_xy
+   182                                  emCima:
+   183 00000142 011E[0000]              	ADD 	WORD [y], BX
+   184 00000146 E9B4FF                  	JMP 	return_next_xy
